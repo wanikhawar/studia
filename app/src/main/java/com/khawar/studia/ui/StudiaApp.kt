@@ -75,7 +75,9 @@ import java.time.LocalDate
 fun StudiaApp(vm: AppViewModel, onDarkChange: (Boolean) -> Unit) {
     val data by vm.store.state.collectAsStateWithLifecycle()
     val dark = isDark(data.settings.theme)
-    LaunchedEffect(dark) { onDarkChange(dark) }
+    // The session screen is always dark, so its status bar needs light icons too
+    val darkBars = dark || data.run != null
+    LaunchedEffect(darkBars) { onDarkChange(darkBars) }
 
     val view = LocalView.current
     val settings by rememberUpdatedState(data.settings)
