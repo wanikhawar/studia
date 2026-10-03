@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Status-bar icon: a stopwatch, white on transparent as Android requires. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M9,1h6v2h-6z M12,5a8,8 0,1 0,0.01 0z M12,7a6,6 0,1 1,-0.01 0z M11,9h2v5h-2z" />
+</vector>

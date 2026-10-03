@@ -1,0 +1,1058 @@
+<title>Studia Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: one phone-sized column of soft bento tiles, a floating pill dock, big pixel numerals carry the data */
+:root{
+  --stage:#d3d1cd; --frame:#f3f2f0;
+  --bg:#e4e2df; --card:#f9f8f6; --tile:#d9d7d3; --tile-2:#cbc8c3;
+  --ink:#36322f; --ink-2:#77716c; --ink-3:#aaa49e;
+  --sel:#46413d; --on-sel:#f6f4f1;
+  --accent:#e4532a; --on-accent:#ffffff;
+  --line:#c8c5c0; --scrim:rgba(30,27,25,.38); --shadow:rgba(40,30,20,.28);
+  --drum-edge:#c9c6c1; --drum-mid:#fbfaf8;
+  --lock-bg:#0e0d0c; --lock-tile:#221f1d; --lock-ink:#f3f0ec; --lock-ink-2:#8a847f; --lock-dim:#3a3532;
+  --f-body:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mark:"Silkscreen",ui-monospace,"SFMono-Regular",monospace;
+  --r-lg:26px; --r-md:18px; --r-sm:12px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --stage:#0a0908; --frame:#2a2624;
+    --bg:#151312; --card:#25221f; --tile:#1d1b19; --tile-2:#302c29;
+    --ink:#f0ece7; --ink-2:#968f89; --ink-3:#5d5752;
+    --sel:#47423d; --on-sel:#f6f2ed;
+    --accent:#f06a3e; --on-accent:#1a1210;
+    --line:#36312e; --scrim:rgba(0,0,0,.55); --shadow:rgba(0,0,0,.6);
+    --drum-edge:#0f0e0d; --drum-mid:#2e2a27;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --stage:#0a0908; --frame:#2a2624;
+  --bg:#151312; --card:#25221f; --tile:#1d1b19; --tile-2:#302c29;
+  --ink:#f0ece7; --ink-2:#968f89; --ink-3:#5d5752;
+  --sel:#47423d; --on-sel:#f6f2ed;
+  --accent:#f06a3e; --on-accent:#1a1210;
+  --line:#36312e; --scrim:rgba(0,0,0,.55); --shadow:rgba(0,0,0,.6);
+  --drum-edge:#0f0e0d; --drum-mid:#2e2a27;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{background:var(--stage);color:var(--ink);font-family:var(--f-body);-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.stage{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding-inline:16px;padding-block:16px}
+.phone{position:relative;width:100%;max-width:400px;height:min(860px,calc(100% - 36px));background:var(--bg);border-radius:44px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 0 0 9px var(--frame),0 40px 70px -30px var(--shadow)}
+.note{margin:0;font-size:12px;color:var(--ink-2);text-align:center}
+@media (max-width:520px){
+  .stage{padding-inline:0;padding-block:0;gap:0}
+  .note{display:none}
+  .phone{max-width:none;height:100%;border-radius:0;box-shadow:none}
+}
+
+/* top bar */
+.top{position:relative;display:flex;justify-content:space-between;align-items:center;padding:20px 16px 10px;min-height:66px}
+.top .mark{position:absolute;left:50%;top:calc(50% + 5px);transform:translate(-50%,-50%)}
+.pill{display:inline-flex;align-items:center;gap:7px;background:var(--card);border:0;border-radius:999px;padding:7px 12px;font-weight:700;font-size:13px;font-variant-numeric:tabular-nums;color:var(--ink);cursor:default;white-space:nowrap;font-size:12px}
+button.pill{cursor:pointer}
+.sq{width:9px;height:9px;background:var(--accent);border-radius:2px;flex:none}
+.mark{line-height:0}
+.wm{display:block;fill:currentColor}
+.wm .ac{fill:var(--accent)}
+
+/* scrolling view + dock */
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden;padding:6px 16px 112px;display:flex;flex-direction:column;gap:8px;scrollbar-width:none}
+.scroll::-webkit-scrollbar{display:none}
+.dock{position:absolute;left:50%;bottom:20px;transform:translateX(-50%);display:flex;gap:2px;background:var(--card);padding:6px;border-radius:999px;box-shadow:0 10px 26px -14px var(--shadow);z-index:5}
+.dock button{min-width:50px;height:42px;padding:0 14px;border-radius:999px;border:0;background:transparent;color:var(--ink-2);display:flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;transition:background .2s}
+.dock button span{display:none;font-size:13px;font-weight:800}
+.dock button[aria-current="page"]{background:var(--sel);color:var(--on-sel);padding:0 16px}
+.dock button[aria-current="page"] span{display:inline}
+
+/* building blocks */
+.card{background:var(--card);border-radius:var(--r-lg);padding:18px}
+.tile{background:var(--tile);border-radius:var(--r-md);padding:14px;border:0;text-align:left;color:var(--ink)}
+button.tile{cursor:pointer;transition:background .15s,transform .1s}
+button.tile:active{transform:scale(.98)}
+.tile.on{background:var(--sel);color:var(--on-sel)}
+.tile.on .lbl{color:var(--on-sel);opacity:.7}
+.lbl{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2);font-weight:700}
+.pix{display:block;fill:currentColor;max-width:100%;height:auto;flex:none}
+.pix .pc{fill:var(--ink-3)}
+.accent{color:var(--accent)}
+.muted{color:var(--ink-2)}
+.row{display:flex;align-items:center;gap:8px}
+.grow{flex:1;min-width:0}
+.blocks{display:grid;gap:3px}
+.blocks i{display:block;aspect-ratio:1;border-radius:2px;background:var(--tile-2)}
+.blocks i.d{background:var(--ink)}
+.blocks i.p{background:var(--accent)}
+h2{margin:0;font-size:24px;font-weight:800;letter-spacing:-.02em;text-wrap:balance}
+.sec{display:flex;justify-content:space-between;align-items:baseline;padding:12px 4px 2px}
+.btn{border:0;border-radius:14px;padding:13px 16px;font-weight:700;font-size:14px;cursor:pointer;background:var(--sel);color:var(--on-sel)}
+.btn.ghost{background:var(--tile);color:var(--ink)}
+.btn.warn{background:var(--accent);color:var(--on-accent)}
+.btn.sm{padding:9px 12px;font-size:13px;border-radius:12px}
+.iconbtn{width:44px;height:44px;border-radius:14px;border:0;background:var(--sel);color:var(--on-sel);display:grid;place-items:center;cursor:pointer;font-size:22px;font-weight:600;flex:none}
+.field{width:100%;background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;font:inherit;font-size:15px;color:var(--ink)}
+.field:focus{outline:none;border-color:var(--ink)}
+textarea.field{min-height:150px;resize:vertical;line-height:1.5}
+.err{color:var(--accent);font-size:12.5px;font-weight:600;min-height:1em}
+
+/* focus screen */
+.clock{display:grid;place-items:center;padding:18px 22px 20px;gap:14px}
+.clock .pix{width:100%}
+.picker{display:flex;align-items:center;gap:12px;width:100%;cursor:pointer}
+.picker .name{font-weight:800;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.picker .sub{font-size:13px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chev{color:var(--ink-2);font-size:18px}
+.fgrid{display:grid;grid-template-columns:1fr 1fr 62px;gap:8px}
+.preset{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:2px;min-height:84px;text-align:center}
+.preset .n{font-size:30px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1}
+.preset .u{font-size:12px;opacity:.7}
+.rcol{grid-column:3;grid-row:1 / span 2;display:flex;flex-direction:column;gap:6px}
+.ruler{flex:1;min-height:150px;background:linear-gradient(var(--drum-edge),var(--drum-mid) 32%,var(--drum-mid) 68%,var(--drum-edge));border:1px solid var(--line);border-radius:20px;position:relative;overflow:hidden;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+.ruler:active{cursor:grabbing}
+.ruler .ticks{position:absolute;inset:0}
+.ruler .ticks i{position:absolute;left:32%;right:32%;top:0;height:2px;border-radius:1px;background:var(--ink-3);will-change:transform,opacity}
+.ruler .ticks i.mj{left:20%;right:20%;height:2.5px;background:var(--ink-2)}
+.ruler .needle{position:absolute;left:10px;right:10px;top:50%;height:4px;margin-top:-2px;background:var(--accent);border-radius:2px;z-index:1;box-shadow:0 0 0 2px var(--drum-mid)}
+.updown{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.updown button{border:0;background:transparent;height:34px;cursor:pointer;color:var(--ink-2);display:grid;place-items:center;font-size:12.5px;font-weight:800;font-variant-numeric:tabular-nums}
+.updown button+button{border-top:1px solid var(--line)}
+.slider{position:relative;height:64px;flex:none;background:var(--tile);border-radius:var(--r-md);user-select:none;-webkit-user-select:none}
+.slider .hint{position:absolute;top:0;bottom:0;left:86px;right:18px;display:flex;align-items:center;justify-content:center;gap:10px;font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;font-weight:800;color:var(--ink-2);pointer-events:none;white-space:nowrap}
+.chevs{display:flex;gap:1px}
+.chevs i{width:7px;height:7px;border-top:2px solid currentColor;border-right:2px solid currentColor;transform:rotate(45deg);animation:chev 1.4s infinite}
+.chevs i:nth-child(2){animation-delay:.2s}
+.chevs i:nth-child(3){animation-delay:.4s}
+@keyframes chev{0%,100%{opacity:.2}50%{opacity:1}}
+.knob{position:absolute;left:6px;top:6px;bottom:6px;width:74px;border-radius:13px;background:var(--sel);color:var(--on-sel);border:0;display:grid;place-items:center;touch-action:none;cursor:grab}
+.slider.finish .hint{left:18px;right:86px;flex-direction:row-reverse}
+.slider.finish .chevs{flex-direction:row-reverse}
+.slider.finish .chevs i{transform:rotate(-135deg)}
+.slider.finish .knob{left:auto;right:6px}
+.today{display:flex;flex-direction:column;gap:10px}
+
+/* subjects */
+.subj{display:flex;flex-direction:column;gap:14px;width:100%;border:0;cursor:pointer;text-align:left;color:var(--ink);transition:transform .1s}
+.subj:active{transform:scale(.99)}
+.subj .head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.subj .title{font-size:18px;font-weight:800;letter-spacing:-.01em;min-width:0}
+.subj .pct{display:flex;align-items:flex-end;gap:3px;flex:none}
+.subj .pct span{font-weight:800;font-size:13px;color:var(--ink-2);line-height:1}
+.facts{display:flex;gap:6px 14px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-2);font-weight:600}
+.facts span{display:inline-flex;align-items:center;gap:4px}
+.tip{margin:2px 4px 0;font-size:12.5px;color:var(--ink-2);line-height:1.45;font-weight:500}
+.facts b{color:var(--ink);font-weight:800}
+.empty{text-align:center;padding:36px 20px;color:var(--ink-2);line-height:1.5}
+
+/* gantt timeline */
+.gantt{display:flex;flex-direction:column;gap:14px}
+.g-axis{position:relative;height:14px;border-bottom:1px solid var(--line);padding-bottom:16px}
+.g-axis span{position:absolute;top:0;font-size:10px;font-weight:800;letter-spacing:.1em;color:var(--ink-2);white-space:nowrap}
+.g-axis i{position:absolute;bottom:-1px;width:1px;height:5px;background:var(--line)}
+.g-rows{display:flex;flex-direction:column;gap:14px}
+.g-row{display:flex;flex-direction:column;gap:7px;border:0;background:none;padding:0;text-align:left;cursor:pointer;width:100%;color:var(--ink)}
+.g-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:13.5px;font-weight:800}
+.g-head span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.g-chip{flex:none;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2)}
+.g-chip.behind{color:var(--accent)}
+.g-track{position:relative;height:16px}
+.g-bar{position:absolute;top:0;bottom:0;background:var(--tile-2);border-radius:4px;overflow:hidden}
+.g-bar.est{background:repeating-linear-gradient(135deg,var(--tile-2) 0 4px,transparent 4px 7px)}
+.g-fill{position:absolute;left:0;top:0;bottom:0;background:var(--ink)}
+.g-part{position:absolute;top:0;bottom:0;background:var(--accent)}
+.g-now{position:absolute;top:-4px;bottom:-4px;width:2px;margin-left:-1px;background:var(--accent);border-radius:1px}
+.g-legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:11px;font-weight:700;color:var(--ink-2)}
+.g-legend span{display:inline-flex;align-items:center;gap:6px}
+.g-legend i{display:inline-block;width:10px;height:10px;border-radius:2px}
+
+/* subject detail */
+.hero{display:flex;flex-direction:column;gap:14px}
+.bignum{display:flex;align-items:flex-end;gap:10px}
+.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.trio .tile{display:flex;flex-direction:column;gap:8px;min-height:92px;justify-content:space-between}
+.trio .v{font-size:22px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.trio .v small{font-size:12px;font-weight:700;color:var(--ink-2);margin-left:2px}
+.topic{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:16px;padding:10px 10px 10px 16px}
+.topic .t{flex:1;min-width:0;cursor:pointer;background:none;border:0;text-align:left;padding:4px 0}
+.topic .t div{font-weight:700;font-size:14.5px;overflow-wrap:anywhere}
+.topic .t small{display:block;color:var(--ink-2);font-size:12px;margin-top:2px;font-weight:600}
+.topic.done .t div{color:var(--ink-2);text-decoration:line-through;text-decoration-color:var(--ink-3)}
+.st{display:flex;flex-direction:column;align-items:center;gap:5px;border:0;background:var(--tile);border-radius:12px;padding:8px 9px;cursor:pointer;min-width:62px}
+.st .m{display:flex;gap:3px}
+.st .m i{width:10px;height:10px;border-radius:2px;background:var(--tile-2)}
+.st .m i.d{background:var(--ink)}
+.st .m i.p{background:var(--accent)}
+.st span{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+.addrow{display:flex;gap:8px;align-items:center}
+
+/* stats */
+.chart{position:relative;padding:22px 18px 14px}
+.bars{display:flex;align-items:flex-end;gap:3px;height:150px;position:relative}
+.bars.wk{gap:12px}
+.bars button{flex:1;min-width:0;border:0;padding:0;background:transparent;height:100%;display:flex;align-items:flex-end;cursor:pointer}
+.bars button span{display:block;width:100%;background:var(--ink);border-radius:2px 2px 0 0}
+.bars button.z span{background:var(--tile-2);height:3px!important}
+.bars button.sel span{background:var(--accent)}
+.gmax{position:absolute;left:0;right:0;top:0;border-top:1px dashed var(--line)}
+.gmax em{position:absolute;right:0;top:-17px;font-style:normal;font-size:10.5px;font-weight:700;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.axis{display:flex;gap:3px;margin-top:6px}
+.axis.wk{gap:12px}
+.axis span{flex:1;min-width:0;font-size:10px;font-weight:700;color:var(--ink-2);text-align:center;white-space:nowrap}
+.cap{text-align:center;padding:12px 0 2px;font-size:11.5px;font-weight:800;letter-spacing:.14em;color:var(--ink)}
+.nav{display:grid;grid-template-columns:52px 1fr 52px;border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden}
+.nav button{border:0;background:transparent;height:50px;cursor:pointer;color:var(--ink-2);font-size:18px}
+.nav div{display:grid;place-items:center;font-size:12px;font-weight:800;letter-spacing:.14em;border-inline:1px solid var(--line)}
+.split{display:grid;grid-template-columns:96px 1fr;gap:8px}
+.seg{display:flex;flex-direction:column;gap:6px}
+.seg .tile{text-align:center;padding:14px 8px;font-weight:700;font-size:13.5px}
+.totals{display:flex;flex-direction:column;gap:12px;justify-content:space-between}
+.kv{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-2);font-weight:600}
+.kv b{color:var(--ink);font-weight:800;font-variant-numeric:tabular-nums}
+.share{display:flex;flex-direction:column;gap:12px}
+.share .r{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;align-items:center;font-size:13.5px;font-weight:700}
+.share .r .blocks{grid-column:1 / -1;grid-template-columns:repeat(20,1fr)}
+.tower{display:grid;grid-template-rows:repeat(7,1fr);grid-auto-flow:column;grid-auto-columns:1fr;gap:3px}
+.tower i{display:block;aspect-ratio:1;border-radius:2px;background:var(--tile)}
+.tower i.d{background:var(--ink)}
+.tower i.t{background:var(--accent)}
+
+/* settings */
+.themes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.themes .tile{display:flex;flex-direction:column;align-items:center;gap:12px;padding:18px 8px 14px}
+.uline{width:28px;height:3px;border-radius:2px;background:var(--line)}
+.themes .on .uline{background:var(--accent)}
+.set{display:flex;align-items:center;gap:14px}
+.set h3{margin:0;font-size:15px;font-weight:800}
+.set p{margin:3px 0 0;font-size:12.5px;color:var(--ink-2);line-height:1.45}
+.sw{width:52px;height:30px;border-radius:999px;background:var(--tile-2);border:0;position:relative;cursor:pointer;padding:0;flex:none;transition:background .18s}
+.sw::before{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:var(--card);box-shadow:0 1px 3px var(--shadow);transition:left .18s}
+.sw[aria-checked="true"]{background:var(--accent)}
+.sw[aria-checked="true"]::before{left:25px}
+.swl{font-size:12px;font-weight:800;color:var(--ink-2);min-width:24px;text-align:right}
+.stepper{display:flex;align-items:center;gap:6px;flex:none}
+.stepper button{width:38px;height:38px;border-radius:12px;border:0;background:var(--tile);cursor:pointer;font-size:18px;font-weight:700;color:var(--ink)}
+.stepper output{min-width:56px;text-align:center;font-weight:800;font-variant-numeric:tabular-nums}
+
+/* sheets */
+.scrim{position:absolute;inset:0;background:var(--scrim);z-index:30;animation:fade .2s}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--bg);border-radius:30px 30px 0 0;padding:10px 16px 28px;max-height:88%;overflow-y:auto;z-index:31;display:flex;flex-direction:column;gap:10px;animation:up .25s cubic-bezier(.2,.8,.2,1)}
+.grab{width:40px;height:4px;border-radius:2px;background:var(--line);margin:4px auto 6px}
+.sheet h2{font-size:21px}
+.opt{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left}
+.opt small{color:var(--ink-2);font-weight:600;font-size:12px}
+.tile.on small{color:var(--on-sel);opacity:.7}
+.segrow{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.segrow .tile{text-align:center;font-weight:700;font-size:13.5px;padding:12px 6px}
+@keyframes up{from{transform:translateY(100%)}}
+@keyframes fade{from{opacity:0}}
+
+/* running session */
+.lock{position:absolute;inset:0;background:var(--lock-bg);color:var(--lock-ink);z-index:20;display:flex;flex-direction:column;gap:8px;padding:22px 16px 26px;overflow-y:auto}
+.lock .mark{display:flex;justify-content:center;padding:6px 0 12px}
+.lt{background:var(--lock-tile);border-radius:var(--r-lg);padding:16px;border:0;color:var(--lock-ink);text-align:left}
+.lock .pix .pc{fill:var(--lock-ink-2)}
+.lock .lbl{color:var(--lock-ink-2)}
+.lclock{display:flex;flex-direction:column;align-items:center;gap:16px;padding:30px 22px 22px}
+.lclock .pix{width:100%}
+.lprog{width:100%;grid-template-columns:repeat(30,1fr);gap:3px}
+.lprog i{background:var(--lock-dim)}
+.lprog i.d{background:var(--lock-ink)}
+.lgrid{display:grid;grid-template-columns:1.4fr 1fr;grid-template-rows:auto auto;gap:8px}
+.lsec{grid-row:span 2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+.lsec .pix{width:58%}
+.lext{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;min-height:96px}
+.lext b{font-size:26px;font-weight:600}
+.lext small{color:var(--lock-ink-2);font-size:11px}
+.lext .dots{display:flex;gap:4px;margin-top:4px}
+.lext .dots i{width:10px;height:10px;border-radius:2px;background:var(--lock-dim)}
+.lext .dots i.u{background:var(--accent)}
+.lext[disabled]{opacity:.5;cursor:default}
+.lends{display:flex;align-items:baseline;justify-content:center;gap:8px;font-weight:600;font-size:17px;min-height:96px;flex-direction:column;align-items:center}
+.lwhat{display:flex;flex-direction:column;gap:4px}
+.lwhat b{font-size:17px;font-weight:800}
+.lwhat span{font-size:13px;color:var(--lock-ink-2)}
+.lock .slider{background:var(--lock-tile);margin-top:auto}
+.lock .slider .hint{color:var(--lock-ink-2)}
+.lock .knob{background:var(--lock-ink);color:var(--lock-bg)}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+
+<div class="stage">
+  <div class="phone" id="app">
+    <header class="top" id="top"></header>
+    <main class="scroll" id="view"></main>
+    <nav class="dock" id="dock" aria-label="Sections">
+      <button data-a="tab" data-v="focus" aria-label="Focus">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 13.5V9.6M9.5 2.8h5M18.4 6.4l1.3-1.3"/></svg><span>Focus</span>
+      </button>
+      <button data-a="tab" data-v="subjects" aria-label="Subjects">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><rect x="3" y="3" width="8" height="8" rx="1.6"/><rect x="13" y="3" width="8" height="8" rx="1.6"/><rect x="3" y="13" width="8" height="8" rx="1.6"/><rect x="13" y="13" width="8" height="8" rx="1.6"/></svg><span>Subjects</span>
+      </button>
+      <button data-a="tab" data-v="stats" aria-label="Stats">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor"><rect x="4" y="11" width="3.4" height="9" rx="1"/><rect x="10.3" y="4" width="3.4" height="16" rx="1"/><rect x="16.6" y="8" width="3.4" height="12" rx="1"/></svg><span>Stats</span>
+      </button>
+      <button data-a="tab" data-v="settings" aria-label="Settings">
+        <svg viewBox="0 0 24 24" width="20" height="20"><g transform="translate(12 12)" fill="currentColor"><rect x="-2" y="-10.5" width="4" height="5" rx="1"/><rect x="-2" y="-10.5" width="4" height="5" rx="1" transform="rotate(45)"/><rect x="-2" y="-10.5" width="4" height="5" rx="1" transform="rotate(90)"/><rect x="-2" y="-10.5" width="4" height="5" rx="1" transform="rotate(135)"/><rect x="-2" y="-10.5" width="4" height="5" rx="1" transform="rotate(180)"/><rect x="-2" y="-10.5" width="4" height="5" rx="1" transform="rotate(225)"/><rect x="-2" y="-10.5" width="4" height="5" rx="1" transform="rotate(270)"/><rect x="-2" y="-10.5" width="4" height="5" rx="1" transform="rotate(315)"/></g><circle cx="12" cy="12" r="5.2" fill="none" stroke="currentColor" stroke-width="3.2"/></svg><span>Settings</span>
+      </button>
+    </nav>
+    <div id="sheet"></div>
+    <div id="run"></div>
+  </div>
+  <p class="note">Clickable prototype with sample data. Your changes stay in this browser.</p>
+</div>
+
+<script>
+(function(){
+const DAY = 86400000;
+const $ = s => document.querySelector(s);
+const app = $('#app'), view = $('#view');
+const HOST_THEME = document.documentElement.getAttribute('data-theme');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Math.random().toString(36).slice(2, 10);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const pad = n => String(n).padStart(2, '0');
+const startOfDay = t => { const d = new Date(t); d.setHours(0,0,0,0); return d.getTime(); };
+const addDays = (t, n) => { const d = new Date(t); d.setDate(d.getDate() + n); return d.getTime(); };
+const key = t => { const d = new Date(t); return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); };
+const parseKey = k => { const [y,m,d] = k.split('-').map(Number); return new Date(y, m-1, d).getTime(); };
+const DOW = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MON = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const fmt = m => { m = Math.round(m); if (m < 60) return m + 'm'; const h = Math.floor(m/60), r = m % 60; return h + 'h' + (r ? ' ' + r + 'm' : ''); };
+const hrs = m => (m/60).toFixed(m >= 600 ? 0 : 1);
+const hhmm = m => pad(Math.floor(m/60)) + ':' + pad(m % 60);
+
+/* ---------- pixel numerals ---------- */
+const G = {
+  '0':['1111','1001','1001','1001','1111'], '1':['0001','0001','0001','0001','0001'],
+  '2':['1111','0001','1111','1000','1111'], '3':['1111','0001','0111','0001','1111'],
+  '4':['1001','1001','1111','0001','0001'], '5':['1111','1000','1111','0001','1111'],
+  '6':['1111','1000','1111','1001','1111'], '7':['1111','0001','0001','0001','0001'],
+  '8':['1111','1001','1111','1001','1111'], '9':['1111','1001','1111','0001','1111'],
+  ':':['0','1','0','1','0'], '.':['0','0','0','0','1'], '-':['000','000','111','000','000']
+};
+function pix(str, maxH){
+  let x = 0, r = '';
+  for (const ch of String(str)) {
+    const g = G[ch]; if (!g) continue;
+    const soft = ch === ':' || ch === '.';
+    g.forEach((row, y) => [...row].forEach((b, c) => {
+      if (b === '1') r += `<rect x="${x+c}" y="${y}" width="1.03" height="1.03"${soft ? ' class="pc"' : ''}/>`;
+    }));
+    x += g[0].length + 1;
+  }
+  x = Math.max(1, x - 1);
+  return `<svg class="pix" viewBox="0 0 ${x} 5" width="${(maxH*x/5).toFixed(0)}" height="${maxH}" style="width:${(maxH*x/5).toFixed(0)}px" role="img" aria-label="${esc(str)}">${r}</svg>`;
+}
+const WM = {
+  s:['0000','0000','1111','1000','1111','0001','1111'], t:['010','010','111','010','010','010','011'],
+  u:['0000','0000','1001','1001','1001','1001','1111'], d:['0001','0001','1111','1001','1001','1001','1111'],
+  i:['2','0','1','1','1','1','1'], a:['0000','0000','1111','0001','1111','1001','1111']
+};
+function wordmark(h){
+  let x = 0, r = '';
+  for (const ch of 'studia') {
+    WM[ch].forEach((row, y) => [...row].forEach((b, c) => {
+      if (b !== '0') r += `<rect x="${x+c}" y="${y}" width="1.03" height="1.03"${b === '2' ? ' class="ac"' : ''}/>`;
+    }));
+    x += WM[ch][0].length + 1;
+  }
+  x -= 1;
+  return `<svg class="wm" viewBox="0 0 ${x} 7" width="${(h*x/7).toFixed(1)}" height="${h}" role="img" aria-label="studia">${r}</svg>`;
+}
+function blocks(n, done, part, cols){
+  let s = `<div class="blocks" style="grid-template-columns:repeat(${cols||n},1fr)">`;
+  for (let i = 0; i < n; i++) s += `<i class="${i < done ? 'd' : i < done + part ? 'p' : ''}"></i>`;
+  return s + '</div>';
+}
+
+/* ---------- state ---------- */
+const STORE = 'studia-proto-v1';
+let S, U = { tab:'focus', sid:null, dur:50, preset:'50', fsid:null, ftid:null, sheet:null, range:'month', anchor:Date.now(), sel:null, confirm:null };
+
+function rng(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function sample(){
+  const r = rng(11), now = Date.now(), today = startOfDay(now);
+  const T = (list) => list.map(([title, status, est]) => ({ id:uid(), title, status, est }));
+  const subjects = [
+    { id:uid(), name:'Physics', exam:key(addDays(today, 24)), target:40, topics:T([
+      ['Kinematics','done',4],['Newton’s laws','done',5],['Work and energy','done',4],['Momentum','doing',4],
+      ['Circular motion','todo',3],['Gravitation','todo',4],['Oscillations','todo',5],['Waves','todo',5]]) },
+    { id:uid(), name:'Calculus', exam:key(addDays(today, 31)), target:35, topics:T([
+      ['Limits','done',3],['Derivatives','done',4],['Chain rule','done',3],['Implicit differentiation','doing',3],
+      ['Integration by parts','todo',4],['Series and convergence','todo',6]]) },
+    { id:uid(), name:'Organic Chemistry', exam:key(addDays(today, 38)), target:30, topics:T([
+      ['Nomenclature','done',3],['Isomerism','doing',4],['Alkanes','todo',3],['Alkenes','todo',4],
+      ['SN1 and SN2 reactions','todo',5],['Aromatic compounds','todo',5]]) },
+    { id:uid(), name:'English Literature', exam:null, target:15, topics:T([
+      ['Macbeth','done',5],['Poetry anthology','doing',6],['Essay structure','todo',2]]) }
+  ];
+  const sessions = [], weights = [.35,.3,.2,.15], lens = [25,30,45,50,60,90];
+  const pickSub = () => { let x = r(), i = 0; while (i < 3 && (x -= weights[i]) > 0) i++; return subjects[i]; };
+  for (let i = 62; i >= 1; i--) {
+    if (i > 22 && r() < .3) continue;
+    const day = addDays(today, -i), n = 1 + Math.floor(r()*3);
+    for (let k = 0; k < n; k++) {
+      const s = pickSub(), pool = s.topics.filter(t => t.status !== 'todo');
+      const t = pool[Math.floor(r()*pool.length)];
+      sessions.push({ id:uid(), sid:s.id, tid:t.id, start: day + (8 + Math.floor(r()*13))*3600000, min: lens[Math.floor(r()*lens.length)] });
+    }
+  }
+  sessions.push({ id:uid(), sid:subjects[0].id, tid:subjects[0].topics[3].id, start:Math.max(today + 60000, now - 90*60000), min:50 });
+  return { subjects, sessions, run:null, sample:true,
+    settings:{ theme:'auto', haptics:true, sound:true, remind:true, revise:true, goal:180, deflen:50 } };
+}
+function load(){
+  try { const raw = localStorage.getItem(STORE); if (raw) { const d = JSON.parse(raw); S = d.S; Object.assign(U, d.U || {}); return; } } catch (e) {}
+  S = sample(); U.fsid = S.subjects[0].id; U.ftid = S.subjects[0].topics[3].id;
+}
+function save(){
+  try { localStorage.setItem(STORE, JSON.stringify({ S, U:{ tab:U.tab, dur:U.dur, preset:U.preset, fsid:U.fsid, ftid:U.ftid, range:U.range } })); } catch (e) {}
+}
+const buzz = (ms) => { if (S.settings.haptics) try { navigator.vibrate && navigator.vibrate(ms || 8); } catch (e) {} };
+
+/* ---------- derived data ---------- */
+const subj = id => S.subjects.find(s => s.id === id);
+const findTopic = id => { for (const s of S.subjects) { const t = s.topics.find(t => t.id === id); if (t) return [s, t]; } return [null, null]; };
+const minsBy = (fn) => S.sessions.reduce((a, x) => fn(x) ? a + x.min : a, 0);
+const subjMin = id => minsBy(x => x.sid === id);
+const topicMin = id => minsBy(x => x.tid === id);
+function byDay(){ const m = {}; for (const x of S.sessions) { const k = key(x.start); m[k] = (m[k]||0) + x.min; } return m; }
+const todayMin = () => byDay()[key(Date.now())] || 0;
+function streak(){
+  const m = byDay(); let d = startOfDay(Date.now()), n = 0;
+  if (!m[key(d)]) d = addDays(d, -1);
+  while (m[key(d)]) { n++; d = addDays(d, -1); }
+  return n;
+}
+function bestStreak(){
+  const keys = Object.keys(byDay()).sort(); if (!keys.length) return 0;
+  const m = byDay(); let d = parseKey(keys[0]), end = startOfDay(Date.now()), best = 0, cur = 0;
+  while (d <= end) { cur = m[key(d)] ? cur + 1 : 0; best = Math.max(best, cur); d = addDays(d, 1); }
+  return best;
+}
+const counts = s => ({ done:s.topics.filter(t => t.status === 'done').length, doing:s.topics.filter(t => t.status === 'doing').length, todo:s.topics.filter(t => t.status === 'todo').length, total:s.topics.length });
+const daysTo = k => k ? Math.round((parseKey(k) - startOfDay(Date.now())) / DAY) : null;
+function pace(s){
+  const c = counts(s), d = daysTo(s.exam);
+  if (d == null || d <= 0 || !c.total) return null;
+  const left = c.todo + c.doing * .5; if (!left) return 0;
+  const per = (c.done + c.doing*.5) ? subjMin(s.id) / (c.done + c.doing*.5) : 180;
+  return left * per / d / 60;
+}
+function normalizeFocus(){
+  if (!subj(U.fsid)) { U.fsid = S.subjects[0] ? S.subjects[0].id : null; U.ftid = null; }
+  if (U.ftid) { const [s] = findTopic(U.ftid); if (!s || s.id !== U.fsid) U.ftid = null; }
+}
+
+/* ---------- views ---------- */
+function topHTML(){
+  const n = streak();
+  return `<span class="pill" aria-label="Study streak"><i class="sq"></i>${n} ${n === 1 ? 'day' : 'days'}</span>
+    <div class="mark">${wordmark(20)}</div>
+    <span class="pill" aria-label="Studied today">${fmt(todayMin())} today</span>`;
+}
+
+function focusHTML(){
+  normalizeFocus();
+  const s = subj(U.fsid), [, t] = U.ftid ? findTopic(U.ftid) : [null, null];
+  const goal = S.settings.goal, tm = todayMin(), filled = Math.min(16, Math.round(tm / goal * 16));
+  const preset = (v, label) => `<button class="tile preset ${U.preset === v ? 'on' : ''}" data-a="preset" data-v="${v}">
+      <span class="n">${label}</span><span class="u">${v === 'custom' ? 'Custom' : 'min'}</span></button>`;
+  return `
+  <section class="card clock" aria-label="Session length">
+    <span class="lbl">Session length</span>
+    <div id="fclock" style="width:100%;display:grid;place-items:center">${pix(hhmm(U.dur), 96)}</div>
+    <span class="muted" style="font-size:12px;font-weight:600">hours : minutes</span>
+  </section>
+  <button class="tile picker" data-a="pick" aria-label="Change what you are studying">
+    <span class="grow">
+      <span class="lbl">Studying</span>
+      <div class="name">${s ? esc(s.name) : 'Add a subject first'}</div>
+      <div class="sub">${t ? esc(t.title) : 'Any topic'}</div>
+    </span><span class="pill" style="cursor:pointer">Change</span>
+  </button>
+  <div class="sec" style="padding-top:8px"><span class="lbl">Length</span><span class="muted" style="font-size:12px;font-weight:600">Tap a preset or drag the dial</span></div>
+  <div class="fgrid">
+    ${preset('25','25')}${preset('50','50')}${preset('90','90')}${preset('custom', hhmm(U.dur).replace(/^0/, ''))}
+    <div class="rcol">
+      <div class="ruler" id="ruler" role="slider" tabindex="0" aria-label="Dial: drag up or down to change minutes" aria-valuenow="${U.dur}" aria-valuemin="5" aria-valuemax="240">
+        <div class="ticks"></div><div class="needle"></div>
+      </div>
+      <div class="updown"><button data-a="step" data-v="5" aria-label="Add 5 minutes">+5</button><button data-a="step" data-v="-5" aria-label="Remove 5 minutes">−5</button></div>
+    </div>
+  </div>
+  <section class="card today">
+    <div class="row"><span class="lbl grow">Today’s goal</span><span style="font-weight:800;font-size:14px">${fmt(tm)} <span class="muted" style="font-weight:600">of ${fmt(goal)}</span></span></div>
+    ${blocks(16, tm >= goal ? 0 : filled, tm >= goal ? 16 : 0)}
+  </section>
+  <div class="slider">
+    <span class="hint">Slide to start<span class="chevs" aria-hidden="true"><i></i><i></i><i></i></span></span>
+    <button class="knob" data-slide="start" aria-label="Start session">
+      <svg width="16" height="16" viewBox="0 0 14 14" fill="currentColor"><path d="M3 1.5v11l9-5.5z"/></svg>
+    </button>
+  </div>`;
+}
+
+/* Gantt: each subject runs from its first session to its exam date (or an
+   estimated finish at the last 14 days' pace); the fill is topics completed. */
+function ganttHTML(){
+  if (!S.subjects.length) return '';
+  const today = startOfDay(Date.now()), short = t => { const d = new Date(t); return d.getDate() + ' ' + MON[d.getMonth()].slice(0,3); };
+  const rows = S.subjects.map(s => {
+    const c = counts(s), first = S.sessions.filter(x => x.sid === s.id).reduce((a, x) => Math.min(a, x.start), Infinity);
+    const start = startOfDay(Math.min(isFinite(first) ? first : (s.created || today), today));
+    let end, est = false;
+    if (s.exam) end = parseKey(s.exam);
+    else {
+      const left = c.todo + c.doing * .5, done = c.done + c.doing * .5;
+      const per = done ? subjMin(s.id) / done : 180;
+      const rate = minsBy(x => x.sid === s.id && x.start >= addDays(today, -13)) / 14;
+      end = left === 0 ? today : rate > 0 ? addDays(today, Math.ceil(left * per / rate)) : addDays(today, 60);
+      end = Math.min(end, addDays(today, 365)); est = true;
+    }
+    end = Math.max(end, addDays(start, 1));
+    const prog = c.total ? c.done / c.total : 0, part = c.total ? c.doing / c.total : 0;
+    const elapsed = clamp((today - start) / (end - start), 0, 1);
+    let chip, behind = false;
+    if (c.total && c.done === c.total) chip = 'Done';
+    else if (est) chip = 'Est. ' + short(end);
+    else if (today > end) { chip = 'Exam passed'; behind = true; }
+    else if (prog + .05 >= elapsed) chip = 'On track';
+    else { chip = 'Behind ' + Math.round((elapsed - prog) * 100) + '%'; behind = true; }
+    return { s, start, end, est, prog, part, chip, behind };
+  });
+  const from = addDays(Math.min(...rows.map(r => r.start)), -3), to = addDays(Math.max(today, ...rows.map(r => r.end)), 3);
+  const pos = t => ((t - from) / (to - from) * 100);
+  let axis = '';
+  const months = [];
+  for (let d = new Date(from); d.getTime() <= to; d.setMonth(d.getMonth() + 1, 1)) {
+    const t = new Date(d.getFullYear(), d.getMonth(), 1).getTime(); if (t >= from) months.push(t);
+  }
+  const every = Math.ceil(months.length / 5);
+  months.forEach((t, i) => {
+    const p = pos(t); axis += `<i style="left:${p.toFixed(2)}%"></i>`;
+    if (i % every === 0 && p < 90) axis += `<span style="left:${p.toFixed(2)}%">${MON[new Date(t).getMonth()].slice(0,3).toUpperCase()}</span>`;
+  });
+  const now = pos(today).toFixed(2);
+  return `<section class="card gantt" aria-label="Timeline of all subjects">
+    <div class="row"><span class="lbl grow">Progress timeline</span><span class="lbl">${short(from)} – ${short(to)}</span></div>
+    <div class="g-axis">${axis}</div>
+    <div class="g-rows">${rows.map(r => {
+      const l = pos(r.start), w = pos(r.end) - l;
+      return `<button class="g-row" data-a="open" data-v="${r.s.id}" aria-label="${esc(r.s.name)}: ${Math.round(r.prog*100)}% done, ${esc(r.chip)}">
+        <span class="g-head"><span>${esc(r.s.name)}</span><span class="g-chip ${r.behind ? 'behind' : ''}">${esc(r.chip)}</span></span>
+        <span class="g-track">
+          <span class="g-bar ${r.est ? 'est' : ''}" style="left:${l.toFixed(2)}%;width:${w.toFixed(2)}%">
+            <span class="g-fill" style="width:${(r.prog*100).toFixed(1)}%"></span>
+            <span class="g-part" style="left:${(r.prog*100).toFixed(1)}%;width:${(r.part*100).toFixed(1)}%"></span>
+          </span>
+          <span class="g-now" style="left:${now}%"></span>
+        </span>
+      </button>`; }).join('')}</div>
+    <div class="g-legend">
+      <span><i style="background:var(--ink)"></i>Done</span>
+      <span><i style="background:var(--accent)"></i>In progress</span>
+      <span><i style="background:var(--tile-2)"></i>Until exam</span>
+      <span><i style="background:repeating-linear-gradient(135deg,var(--ink-3) 0 2px,transparent 2px 4px)"></i>Estimated</span>
+      <span><i style="background:var(--accent);width:2px"></i>Today</span>
+    </div>
+  </section>`;
+}
+
+function subjectsHTML(){
+  const list = S.subjects.map(s => {
+    const c = counts(s), pct = c.total ? Math.round(c.done / c.total * 100) : 0, d = daysTo(s.exam);
+    const done = c.total ? Math.round(c.done / c.total * 20) : 0, part = c.total ? Math.round(c.doing / c.total * 20) : 0;
+    return `<button class="card subj" data-a="open" data-v="${s.id}">
+      <div class="head"><div class="title">${esc(s.name)}</div>
+        <div class="pct">${pix(String(pct), 30)}<span>%</span></div></div>
+      ${blocks(20, done, part)}
+      <div class="facts"><span><b>${c.done}</b> of ${c.total} topics done</span>${c.doing ? `<span><i class="sq"></i><b>${c.doing}</b> in progress</span>` : ''}<span><b>${hrs(subjMin(s.id))}</b> h studied</span>
+        ${d != null ? `<span>${d >= 0 ? `Exam in <b>${d}</b> days` : 'Exam passed'}</span>` : ''}</div>
+    </button>`;
+  }).join('');
+  return `<div class="sec" style="padding-top:4px"><h2>Subjects</h2>
+      <button class="iconbtn" data-a="addsub" aria-label="Add subject">+</button></div>
+    ${ganttHTML()}
+    ${list || `<div class="card empty">No subjects yet.<br>Tap <b>+</b> to add your first one.</div>`}`;
+}
+
+function detailHTML(){
+  const s = subj(U.sid); if (!s) { U.sid = null; return subjectsHTML(); }
+  const c = counts(s), m = subjMin(s.id), d = daysTo(s.exam), p = pace(s);
+  const wk = minsBy(x => x.sid === s.id && x.start >= addDays(startOfDay(Date.now()), -6));
+  const order = { doing:0, todo:1, done:2 };
+  const group = (st, title) => {
+    const ts = s.topics.filter(t => t.status === st); if (!ts.length) return '';
+    return `<div class="sec"><span class="lbl">${title}</span><span class="lbl">${ts.length}</span></div>` + ts.map(topicRow).join('');
+  };
+  return `
+  <div class="row"><button class="pill" data-a="back">← Subjects</button></div>
+  <section class="card hero">
+    <h2>${esc(s.name)}</h2>
+    <div class="bignum">${pix(hrs(m), 64)}<div style="padding-bottom:4px"><div class="lbl">Hours</div>
+      <div class="muted" style="font-size:12.5px;font-weight:600">${s.target ? 'of ' + s.target + ' h target' : 'logged'}</div></div></div>
+    ${blocks(20, c.total ? Math.round(c.done/c.total*20) : 0, c.total ? Math.round(c.doing/c.total*20) : 0)}
+    <div class="facts"><span><b>${c.done}</b> done</span><span><b>${c.doing}</b> in progress</span><span><b>${c.todo}</b> to do</span></div>
+  </section>
+  <div class="trio">
+    <div class="tile"><span class="lbl">Exam in</span><span class="v">${d == null ? '—' : d < 0 ? 'Done' : d + '<small>days</small>'}</span></div>
+    <div class="tile"><span class="lbl">Pace needed</span><span class="v">${p == null ? '—' : p.toFixed(1) + '<small>h/day</small>'}</span></div>
+    <div class="tile"><span class="lbl">Last 7 days</span><span class="v">${hrs(wk)}<small>h</small></span></div>
+  </div>
+  ${c.total ? `<p class="tip">Tap a topic to see its sessions. Tap the status button on the right to move it from To do to Doing to Done.</p>` : ''}
+  ${group('doing','In progress')}${group('todo','To do')}${group('done','Done')}
+  ${!c.total ? `<div class="card empty">No topics yet. Add them one by one below, or paste your whole syllabus.</div>` : ''}
+  <div class="sec"><span class="lbl">Add topic</span><button class="pill" data-a="bulk">Paste a list</button></div>
+  <div class="addrow"><input class="field" id="newTopic" placeholder="e.g. Thermodynamics" autocomplete="off">
+    <button class="iconbtn" data-a="addtopic" aria-label="Add topic">+</button></div>
+  <div style="padding-top:18px">${U.confirm === 'delsub'
+    ? `<div class="row"><button class="btn warn grow" data-a="delsub">Delete ${esc(s.name)} and its sessions</button><button class="btn ghost" data-a="cancel">Keep</button></div>`
+    : `<button class="btn ghost" style="width:100%" data-a="delsub">Delete subject</button>`}</div>`;
+}
+function topicRow(t){
+  const m = topicMin(t.id), lv = { todo:0, doing:1, done:3 }[t.status];
+  const meter = [0,1,2].map(i => `<i class="${t.status === 'doing' ? (i === 0 ? 'p' : '') : (i < lv ? 'd' : '')}"></i>`).join('');
+  const lbl = { todo:'To do', doing:'Doing', done:'Done' }[t.status];
+  return `<div class="topic ${t.status}">
+    <button class="t" data-a="topic" data-v="${t.id}"><div>${esc(t.title)}</div><small>${m ? fmt(m) + ' studied' : 'Not started'}${t.est ? ' · est. ' + t.est + ' h' : ''}</small></button>
+    <button class="st" data-a="cycle" data-v="${t.id}" aria-label="Status: ${lbl}. Tap to change"><span class="m">${meter}</span><span>${lbl}</span></button>
+  </div>`;
+}
+
+function rangeInfo(){
+  const a = new Date(U.anchor), m = byDay(), items = [];
+  let from, to, title;
+  if (U.range === 'week') {
+    const d0 = startOfDay(a); from = addDays(d0, -((a.getDay()+6) % 7)); to = addDays(from, 7);
+    for (let i = 0; i < 7; i++) { const t = addDays(from, i), d = new Date(t);
+      items.push({ t, v:m[key(t)]||0, ax:'MTWTFSS'[i], cap:DOW[d.getDay()] + ' ' + d.getDate() }); }
+    const e = new Date(addDays(from, 6)), f = new Date(from);
+    title = f.getDate() + ' ' + MON[f.getMonth()].slice(0,3) + ' – ' + e.getDate() + ' ' + MON[e.getMonth()].slice(0,3);
+  } else if (U.range === 'month') {
+    const y = a.getFullYear(), mo = a.getMonth(), n = new Date(y, mo+1, 0).getDate();
+    from = new Date(y, mo, 1).getTime(); to = new Date(y, mo+1, 1).getTime();
+    for (let i = 1; i <= n; i++) { const t = new Date(y, mo, i).getTime();
+      items.push({ t, v:m[key(t)]||0, ax:[1,8,15,22,29].includes(i) ? String(i) : '', cap:DOW[new Date(t).getDay()] + ' ' + i }); }
+    title = MON[mo] + ' ' + y;
+  } else {
+    const y = a.getFullYear(); from = new Date(y, 0, 1).getTime(); to = new Date(y+1, 0, 1).getTime();
+    for (let mo = 0; mo < 12; mo++) { const f = new Date(y, mo, 1).getTime(), e = new Date(y, mo+1, 1).getTime();
+      items.push({ t:f, v:minsBy(x => x.start >= f && x.start < e), ax:MON[mo][0], cap:MON[mo] }); }
+    title = String(y);
+  }
+  return { items, from, to, title };
+}
+function statsHTML(){
+  const R = rangeInfo(), it = R.items, max = Math.max(0, ...it.map(i => i.v));
+  const now = Date.now(), unit = U.range === 'year' ? 'month' : 'day';
+  let sel = U.sel;
+  if (sel == null || sel >= it.length) {
+    const ti = it.findIndex((x, i) => now >= x.t && (i === it.length - 1 ? now < R.to : now < it[i+1].t));
+    sel = ti >= 0 ? ti : it.reduce((b, x, i) => x.v > it[b].v ? i : b, 0);
+  }
+  const total = it.reduce((a, x) => a + x.v, 0);
+  const elapsed = U.range === 'year'
+    ? Math.max(1, Math.round((Math.min(now, R.to) - R.from) / DAY))
+    : Math.max(1, it.filter(x => x.t <= now).length);
+  const best = it.reduce((b, x) => x.v > b.v ? x : b, it[0]);
+  const bars = it.map((x, i) => `<button class="${x.v ? '' : 'z'} ${i === sel ? 'sel' : ''}" data-a="bar" data-v="${i}" aria-label="${esc(x.cap)}: ${fmt(x.v)}"><span style="height:${max ? (x.v/max*100).toFixed(1) : 0}%"></span></button>`).join('');
+  const per = S.subjects.map(s => ({ s, v:minsBy(x => x.sid === s.id && x.start >= R.from && x.start < R.to) })).filter(x => x.v).sort((a, b) => b.v - a.v);
+  const pmax = per.length ? per[0].v : 1;
+  const tStart = addDays(startOfDay(now), -83), m = byDay();
+  let tower = '';
+  for (let i = 0; i < 84; i++) { const t = addDays(tStart, i); tower += `<i class="${i === 83 ? 't' : m[key(t)] ? 'd' : ''}"></i>`; }
+  const wk = U.range === 'week' ? ' wk' : '';
+  return `
+  <section class="card chart">
+    <div class="lbl" style="margin-bottom:28px">Time studied per ${unit}</div>
+    <div class="bars${wk}">${max ? `<div class="gmax"><em>${fmt(max)}</em></div>` : ''}${bars}</div>
+    <div class="axis${wk}">${it.map(x => `<span>${x.ax}</span>`).join('')}</div>
+    <div class="cap">${esc(it[sel].cap.toUpperCase())} · ${fmt(it[sel].v).toUpperCase()}</div>
+    <div class="muted" style="text-align:center;font-size:11.5px;font-weight:600">Tap any bar to see it here</div>
+  </section>
+  <div class="nav"><button data-a="nav" data-v="-1" aria-label="Previous">‹</button><div>${esc(R.title.toUpperCase())}</div><button data-a="nav" data-v="1" aria-label="Next">›</button></div>
+  <div class="split">
+    <div class="seg">${['week','month','year'].map(r => `<button class="tile ${U.range === r ? 'on' : ''}" data-a="range" data-v="${r}">${r[0].toUpperCase() + r.slice(1)}</button>`).join('')}</div>
+    <section class="card totals">
+      <div><span class="lbl">Total</span><div class="bignum" style="margin-top:8px">${pix(hrs(total), 44)}<span class="lbl" style="padding-bottom:2px">h</span></div></div>
+      <div class="kv"><span>Daily average</span><b>${fmt(total / elapsed)}</b></div>
+      <div class="kv"><span>Best ${unit}</span><b>${best && best.v ? fmt(best.v) : '—'}</b></div>
+    </section>
+  </div>
+  <section class="card share">
+    <span class="lbl">By subject</span>
+    ${per.length ? per.map(x => `<div class="r"><span style="overflow-wrap:anywhere">${esc(x.s.name)}</span><span class="muted">${fmt(x.v)}</span>${blocks(20, Math.max(1, Math.round(x.v/pmax*20)), 0)}</div>`).join('') : `<span class="muted" style="font-size:13px">No study time in this period.</span>`}
+  </section>
+  <section class="card" style="display:flex;flex-direction:column;gap:14px">
+    <div class="bignum"><span class="accent">${pix(String(streak()), 64)}</span>
+      <div style="padding-bottom:4px"><div class="lbl">Days in a row</div><div class="muted" style="font-size:12.5px;font-weight:600">Best: ${bestStreak()}</div></div></div>
+    <div class="tower" aria-label="Last 12 weeks">${tower}</div>
+    <div class="g-legend"><span><i style="background:var(--ink)"></i>Studied</span><span><i style="background:var(--tile)"></i>Missed</span><span><i style="background:var(--accent)"></i>Today</span><span style="margin-left:auto">Last 12 weeks</span></div>
+  </section>`;
+}
+
+function settingsHTML(){
+  const st = S.settings;
+  const th = (v, icon, label) => `<button class="tile ${st.theme === v ? 'on' : ''}" data-a="theme" data-v="${v}" aria-label="${label}">${icon}<span style="font-size:12px;font-weight:700">${label}</span><span class="uline"></span></button>`;
+  const sw = (k, title, desc) => `<section class="card set"><div class="grow"><h3>${title}</h3><p>${desc}</p></div>
+    <span class="swl" aria-hidden="true">${st[k] ? 'On' : 'Off'}</span><button class="sw" role="switch" aria-checked="${!!st[k]}" aria-label="${title}" data-a="toggle" data-v="${k}"></button></section>`;
+  const step = (a, title, desc, val) => `<section class="card set"><div class="grow"><h3>${title}</h3><p>${desc}</p></div>
+    <div class="stepper"><button data-a="${a}" data-v="-1" aria-label="Less">−</button><output>${val}</output><button data-a="${a}" data-v="1" aria-label="More">+</button></div></section>`;
+  const sun = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+  const half = '<svg width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>';
+  const moon = '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>';
+  return `<div class="sec" style="padding-top:4px"><h2>Settings</h2></div>
+  <div class="themes">${th('light', sun, 'Light')}${th('auto', half, 'System')}${th('dark', moon, 'Dark')}</div>
+  ${step('goal', 'Daily goal', 'How long you want to study each day.', fmt(st.goal))}
+  ${step('deflen', 'Default session', 'The length the timer starts at.', st.deflen + 'm')}
+  ${sw('haptics', 'Haptic feedback', 'A light vibration when you turn the dial or tick off a topic.')}
+  ${sw('sound', 'Dial clicks', 'A soft tick for every minute as the dial turns.')}
+  ${sw('remind', 'Evening reminder', 'A nudge at 8 PM if you have not studied yet today.')}
+  ${sw('revise', 'Revision reminders', 'Brings finished topics back after 1, 3, 7 and 30 days so they stick.')}
+  <section class="card set"><div class="grow"><h3>Your data</h3><p>${S.sample ? 'You are looking at sample subjects and sessions.' : 'Everything is stored on this device.'}</p></div></section>
+  ${U.confirm === 'clear'
+    ? `<div class="row"><button class="btn warn grow" data-a="clear">Delete all subjects and sessions</button><button class="btn ghost" data-a="cancel">Keep</button></div>`
+    : `<div class="row"><button class="btn ghost grow" data-a="clear">${S.sample ? 'Start fresh' : 'Clear all data'}</button><button class="btn ghost grow" data-a="restore">Load sample data</button></div>`}`;
+}
+
+/* ---------- sheets ---------- */
+function sheetHTML(){
+  const sh = U.sheet; if (!sh) return '';
+  let body = '';
+  if (sh.type === 'pick') {
+    const s = subj(sh.sid);
+    body = `<h2>What are you studying?</h2>
+      ${S.subjects.map(x => `<button class="tile opt ${x.id === sh.sid ? 'on' : ''}" data-a="picksub" data-v="${x.id}"><b>${esc(x.name)}</b><small>${counts(x).todo + counts(x).doing} left</small></button>`).join('')}
+      ${s ? `<div class="sec"><span class="lbl">Topic in ${esc(s.name)}</span></div>
+      <button class="tile opt ${!U.ftid && U.fsid === s.id ? 'on' : ''}" data-a="picktopic" data-v=""><b>Any topic</b></button>
+      ${s.topics.filter(t => t.status !== 'done').map(t => `<button class="tile opt ${U.ftid === t.id ? 'on' : ''}" data-a="picktopic" data-v="${t.id}"><b>${esc(t.title)}</b><small>${t.status === 'doing' ? 'In progress' : 'To do'}</small></button>`).join('')}` : ''}`;
+  } else if (sh.type === 'addsub') {
+    body = `<h2>New subject</h2>
+      <label class="lbl" for="sName">Name</label><input class="field" id="sName" placeholder="e.g. Biology" autocomplete="off">
+      <label class="lbl" for="sExam">Exam date (optional)</label><input class="field" id="sExam" type="date">
+      <label class="lbl" for="sTarget">Target hours (optional)</label><input class="field" id="sTarget" type="number" min="0" step="1" placeholder="e.g. 30" inputmode="numeric">
+      <div class="err" id="sErr"></div>
+      <button class="btn" data-a="savesub">Add subject</button>`;
+  } else if (sh.type === 'bulk') {
+    body = `<h2>Paste a list</h2><p class="muted" style="margin:0;font-size:13px">One topic per line. Copy it straight from your syllabus.</p>
+      <label class="lbl" for="bulkText" hidden>Topics</label>
+      <textarea class="field" id="bulkText" placeholder="Thermodynamics&#10;Electrostatics&#10;Magnetism"></textarea>
+      <div class="err" id="bErr"></div>
+      <button class="btn" data-a="savebulk">Add topics</button>`;
+  } else if (sh.type === 'topic') {
+    const [s, t] = findTopic(sh.tid); if (!t) { U.sheet = null; return ''; }
+    const ses = S.sessions.filter(x => x.tid === t.id).sort((a, b) => b.start - a.start);
+    body = `<span class="lbl">${esc(s.name)}</span>
+      <label class="lbl" for="tTitle" hidden>Title</label>
+      <input class="field" id="tTitle" value="${esc(t.title)}" style="font-weight:800;font-size:17px">
+      <div class="segrow">${[['todo','To do'],['doing','In progress'],['done','Done']].map(([v, l]) => `<button class="tile ${t.status === v ? 'on' : ''}" data-a="setstatus" data-v="${v}">${l}</button>`).join('')}</div>
+      <div class="trio" style="grid-template-columns:1fr 1fr">
+        <div class="tile"><span class="lbl">Studied</span><span class="v">${fmt(topicMin(t.id))}</span></div>
+        <div class="tile"><span class="lbl">Sessions</span><span class="v">${ses.length}</span></div>
+      </div>
+      ${ses.length ? `<div class="card" style="display:flex;flex-direction:column;gap:8px">${ses.slice(0, 4).map(x => { const d = new Date(x.start); return `<div class="kv"><span>${DOW[d.getDay()].slice(0,3)} ${d.getDate()} ${MON[d.getMonth()].slice(0,3)}</span><b>${fmt(x.min)}</b></div>`; }).join('')}</div>` : ''}
+      <button class="btn" data-a="focustopic">Start a session on this topic</button>
+      ${sh.confirm ? `<button class="btn warn" data-a="deltopic">Tap again to delete</button>` : `<button class="btn ghost" data-a="deltopic">Delete topic</button>`}`;
+  } else if (sh.type === 'done') {
+    const s = subj(sh.sid), [, t] = sh.tid ? findTopic(sh.tid) : [null, null];
+    body = `<div style="display:grid;place-items:center;gap:10px;padding:14px 0 6px">${pix(String(sh.min), 80)}<span class="lbl">Minutes logged</span></div>
+      <p style="margin:0;text-align:center;font-weight:700">${s ? esc(s.name) : ''}${t ? ' · ' + esc(t.title) : ''}</p>
+      <p class="muted" style="margin:0 0 6px;text-align:center;font-size:13px">${fmt(todayMin())} today · ${streak()} days in a row</p>
+      ${t && t.status !== 'done' ? `<div class="row"><button class="btn warn grow" data-a="donemark" data-v="done">Mark topic done</button><button class="btn ghost grow" data-a="donemark" data-v="doing">Still working on it</button></div>` : `<button class="btn" data-a="close">Done</button>`}`;
+  }
+  return `<div class="scrim" data-a="close"></div><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>${body}</div>`;
+}
+
+/* ---------- running session ---------- */
+let ticker = null;
+function runHTML(){
+  const r = S.run; if (!r) return '';
+  const total = (r.dur + r.ext) * 60000, left = Math.max(0, r.start + total - Date.now());
+  const lm = Math.floor(left / 60000), ls = Math.floor(left / 1000) % 60;
+  const doneBlocks = Math.round((1 - left / total) * 30);
+  const end = new Date(r.start + total), s = subj(r.sid), [, t] = r.tid ? findTopic(r.tid) : [null, null];
+  const endStr = ((end.getHours() + 11) % 12 + 1) + ':' + pad(end.getMinutes()) + ' ' + (end.getHours() < 12 ? 'AM' : 'PM');
+  const used = r.ext / 5;
+  return `<div class="lock" role="dialog" aria-label="Session running">
+    <div class="mark">${wordmark(20)}</div>
+    <div class="lt lclock">${pix(hhmm(lm), 100)}${blocks(30, doneBlocks, 0).replace('class="blocks"', 'class="blocks lprog"')}</div>
+    <div class="lgrid">
+      <div class="lt lsec">${pix(pad(ls), 70)}<span class="lbl">Sec</span></div>
+      <button class="lt lext" data-a="ext" ${used >= 4 ? 'disabled' : ''} aria-label="Add 5 minutes"><b>+5</b><small>Add 5 min</small><span class="dots">${[0,1,2,3].map(i => `<i class="${i < used ? 'u' : ''}"></i>`).join('')}</span><small>${4 - used} left</small></button>
+      <div class="lt lends"><span class="lbl">Ends</span><span>${endStr}</span></div>
+    </div>
+    <div class="lt lwhat"><span class="lbl">Studying</span><b>${s ? esc(s.name) : ''}</b><span>${t ? esc(t.title) : 'Any topic'}</span></div>
+    <div class="slider finish"><span class="hint"><span class="chevs" aria-hidden="true"><i></i><i></i><i></i></span>Slide to finish</span>
+      <button class="knob" data-slide="finish" aria-label="Finish session"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="2" y="2" width="10" height="10" rx="1.5"/></svg></button></div>
+  </div>`;
+}
+function startRun(){
+  normalizeFocus();
+  if (!U.fsid) { U.tab = 'subjects'; U.sheet = { type:'addsub' }; render(); return; }
+  S.run = { start:Date.now(), dur:U.dur, ext:0, sid:U.fsid, tid:U.ftid };
+  buzz(20); render();
+}
+function finishRun(){
+  const r = S.run; if (!r) return;
+  const min = Math.max(1, Math.min(r.dur + r.ext, Math.round((Date.now() - r.start) / 60000)));
+  if (subj(r.sid)) S.sessions.push({ id:uid(), sid:r.sid, tid:r.tid, start:r.start, min });
+  if (r.tid) { const [, t] = findTopic(r.tid); if (t && t.status === 'todo') t.status = 'doing'; }
+  S.run = null; U.sheet = { type:'done', min, sid:r.sid, tid:r.tid }; buzz(30); render();
+}
+function syncTicker(){
+  if (S.run && !ticker) ticker = setInterval(() => {
+    if (!S.run) return syncTicker();
+    if (Date.now() >= S.run.start + (S.run.dur + S.run.ext) * 60000) return finishRun();
+    const dragging = $('#run .knob.drag'); if (!dragging) $('#run').innerHTML = runHTML();
+  }, 1000);
+  if (!S.run && ticker) { clearInterval(ticker); ticker = null; }
+}
+
+/* ---------- render ---------- */
+let lastTab = null;
+function applyTheme(){
+  const t = S.settings.theme, el = document.documentElement;
+  if (t === 'auto') { HOST_THEME ? el.setAttribute('data-theme', HOST_THEME) : el.removeAttribute('data-theme'); }
+  else el.setAttribute('data-theme', t);
+}
+function render(){
+  applyTheme();
+  $('#top').innerHTML = topHTML();
+  const keep = lastTab === U.tab + (U.sid || '') ? view.scrollTop : 0;
+  view.innerHTML = U.tab === 'focus' ? focusHTML() : U.tab === 'subjects' ? (U.sid ? detailHTML() : subjectsHTML()) : U.tab === 'stats' ? statsHTML() : settingsHTML();
+  view.scrollTop = keep; lastTab = U.tab + (U.sid || '');
+  mountDial();
+  document.querySelectorAll('#dock button').forEach(b => b.dataset.v === U.tab ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
+  $('#sheet').innerHTML = sheetHTML();
+  $('#run').innerHTML = runHTML();
+  syncTicker(); save();
+}
+
+/* ---------- actions ---------- */
+function act(a, v, el){
+  const st = S.settings;
+  switch (a) {
+    case 'tab': if (U.tab === v && v === 'subjects') U.sid = null; U.tab = v; U.confirm = null; break;
+    case 'open': U.sid = v; U.confirm = null; break;
+    case 'back': U.sid = null; U.confirm = null; break;
+    case 'preset':
+      if (v === 'custom') { U.preset = v; document.querySelectorAll('[data-a="preset"]').forEach(b => b.classList.toggle('on', b.dataset.v === v)); save(); buzz(); return; }
+      dialTo(+v); return;
+    case 'step': dialTo((dial ? (dial.target != null ? dial.target : Math.round(dial.pos)) : U.dur) + +v); return;
+    case 'pick': if (!S.subjects.length) { U.tab = 'subjects'; U.sheet = { type:'addsub' }; break; } U.sheet = { type:'pick', sid:U.fsid }; break;
+    case 'picksub': U.sheet.sid = v; break;
+    case 'picktopic': U.fsid = U.sheet.sid; U.ftid = v || null; U.sheet = null; buzz(); break;
+    case 'close': U.sheet = null; break;
+    case 'cancel': U.confirm = null; break;
+    case 'addsub': U.sheet = { type:'addsub' }; break;
+    case 'savesub': {
+      const name = $('#sName').value.trim();
+      if (!name) { $('#sErr').textContent = 'Give the subject a name.'; $('#sName').focus(); return; }
+      const s = { id:uid(), name, exam:$('#sExam').value || null, target:Math.max(0, parseInt($('#sTarget').value, 10) || 0), created:Date.now(), topics:[] };
+      S.subjects.push(s); U.sheet = null; U.sid = s.id; U.tab = 'subjects'; buzz(); break;
+    }
+    case 'addtopic': {
+      const inp = $('#newTopic'), title = inp.value.trim(); if (!title) { inp.focus(); return; }
+      subj(U.sid).topics.push({ id:uid(), title, status:'todo', est:0 }); buzz(); render(); $('#newTopic').focus(); return;
+    }
+    case 'bulk': U.sheet = { type:'bulk' }; break;
+    case 'savebulk': {
+      const lines = $('#bulkText').value.split('\n').map(l => l.replace(/^\s*([-*•]|\d+[.)])\s*/, '').trim()).filter(Boolean);
+      if (!lines.length) { $('#bErr').textContent = 'Paste at least one topic, one per line.'; return; }
+      const s = subj(U.sid); lines.forEach(title => s.topics.push({ id:uid(), title, status:'todo', est:0 })); U.sheet = null; buzz(); break;
+    }
+    case 'cycle': { const [, t] = findTopic(v); t.status = { todo:'doing', doing:'done', done:'todo' }[t.status]; buzz(t.status === 'done' ? 25 : 8); break; }
+    case 'topic': U.sheet = { type:'topic', tid:v }; break;
+    case 'setstatus': { const [, t] = findTopic(U.sheet.tid); t.status = v; buzz(); break; }
+    case 'focustopic': { const [s, t] = findTopic(U.sheet.tid); U.fsid = s.id; U.ftid = t.id; U.sheet = null; U.tab = 'focus'; break; }
+    case 'deltopic': {
+      if (!U.sheet.confirm) { U.sheet.confirm = true; break; }
+      const [s] = findTopic(U.sheet.tid); s.topics = s.topics.filter(t => t.id !== U.sheet.tid);
+      S.sessions.forEach(x => { if (x.tid === U.sheet.tid) x.tid = null; }); U.sheet = null; break;
+    }
+    case 'delsub':
+      if (U.confirm !== 'delsub') { U.confirm = 'delsub'; break; }
+      S.subjects = S.subjects.filter(s => s.id !== U.sid); S.sessions = S.sessions.filter(x => x.sid !== U.sid); U.sid = null; U.confirm = null; break;
+    case 'range': U.range = v; U.sel = null; break;
+    case 'nav': {
+      const d = new Date(U.anchor), n = +v;
+      if (U.range === 'week') d.setDate(d.getDate() + 7*n); else if (U.range === 'month') { d.setDate(1); d.setMonth(d.getMonth() + n); } else d.setFullYear(d.getFullYear() + n);
+      U.anchor = d.getTime(); U.sel = null; break;
+    }
+    case 'bar': U.sel = +v; buzz(4); break;
+    case 'theme': st.theme = v; break;
+    case 'goal': st.goal = clamp(st.goal + 30 * v, 30, 720); break;
+    case 'deflen': st.deflen = clamp(st.deflen + 5 * v, 5, 240); U.dur = st.deflen; U.preset = ['25','50','90'].includes(String(U.dur)) ? String(U.dur) : 'custom'; break;
+    case 'toggle': st[v] = !st[v]; buzz(); break;
+    case 'clear':
+      if (U.confirm !== 'clear') { U.confirm = 'clear'; break; }
+      S.subjects = []; S.sessions = []; S.sample = false; U.fsid = U.ftid = null; U.confirm = null; break;
+    case 'restore': { const keep = S.settings; S = sample(); S.settings = keep; U.fsid = S.subjects[0].id; U.ftid = S.subjects[0].topics[3].id; U.confirm = null; break; }
+    case 'ext': if (S.run && S.run.ext < 20) { S.run.ext += 5; buzz(); } $('#run').innerHTML = runHTML(); save(); return;
+    case 'donemark': { const [, t] = findTopic(U.sheet.tid); if (t) t.status = v; U.sheet = null; buzz(v === 'done' ? 25 : 8); break; }
+  }
+  render();
+}
+
+app.addEventListener('click', e => {
+  const el = e.target.closest('[data-a]'); if (!el || !app.contains(el)) return;
+  act(el.dataset.a, el.dataset.v, el);
+});
+app.addEventListener('change', e => {
+  if (e.target.id === 'tTitle' && U.sheet && U.sheet.type === 'topic') {
+    const [, t] = findTopic(U.sheet.tid), v = e.target.value.trim(); if (t && v) { t.title = v; save(); view.innerHTML = U.sid ? detailHTML() : view.innerHTML; }
+  }
+});
+app.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.id === 'newTopic') { e.preventDefault(); act('addtopic'); }
+  if (e.key === 'Enter' && e.target.id === 'sName') { e.preventDefault(); act('savesub'); }
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.dataset && e.target.dataset.slide) { e.preventDefault(); e.target.dataset.slide === 'start' ? startRun() : finishRun(); }
+  if (e.target.id === 'ruler' && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) { e.preventDefault(); dialTo(U.dur + (e.key === 'ArrowUp' ? 1 : -1)); }
+  if (e.key === 'Escape' && U.sheet) { U.sheet = null; render(); }
+});
+
+/* dial: a drum with momentum, detents and rubber-band ends.
+   Drag it, fling it, scroll on it, or use the arrow keys. */
+const DMIN = 5, DMAX = 240, STEP = 10;           // px of travel per minute
+let dial = null, actx = null, clickBuf = null;
+function setDur(n){
+  U.dur = n; U.preset = ['25','50','90'].includes(String(n)) ? String(n) : 'custom';
+  const c = $('#fclock'); if (c) c.innerHTML = pix(hhmm(n), 96);
+  document.querySelectorAll('[data-a="preset"]').forEach(b => b.classList.toggle('on', b.dataset.v === U.preset));
+  const cu = $('[data-a="preset"][data-v="custom"] .n'); if (cu) cu.textContent = hhmm(n).replace(/^0/, '');
+  const r = $('#ruler'); if (r) r.setAttribute('aria-valuenow', n);
+}
+function ensureAudio(){
+  if (!S.settings.sound) return;
+  try {
+    if (!actx) { const C = window.AudioContext || window.webkitAudioContext; if (C) actx = new C(); }
+    if (actx && actx.state === 'suspended') actx.resume();
+  } catch (e) {}
+}
+function tickSound(){
+  if (!actx || !S.settings.sound) return;
+  try {
+    if (!clickBuf) {
+      const len = Math.floor(actx.sampleRate * .014);
+      clickBuf = actx.createBuffer(1, len, actx.sampleRate);
+      const ch = clickBuf.getChannelData(0);
+      for (let i = 0; i < len; i++) ch[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 8);
+    }
+    const src = actx.createBufferSource(), f = actx.createBiquadFilter(), g = actx.createGain();
+    src.buffer = clickBuf; f.type = 'bandpass'; f.frequency.value = 3200; f.Q.value = 1.4; g.gain.value = .5;
+    src.connect(f); f.connect(g); g.connect(actx.destination); src.start();
+  } catch (e) {}
+}
+function mountDial(){
+  if (dial && dial.raf) cancelAnimationFrame(dial.raf);
+  const el = $('#ruler'); if (!el) { dial = null; return; }
+  const box = el.querySelector('.ticks'), nodes = [];
+  for (let i = 0; i < 31; i++) { const t = document.createElement('i'); box.appendChild(t); nodes.push(t); }
+  dial = { el, nodes, pos:U.dur, vel:0, target:null, raf:0, last:U.dur, lastTick:0, dragging:false, samples:[] };
+  drawDial();
+}
+function drawDial(){
+  const d = dial, h = d.el.clientHeight, c = h / 2, R = c * .92;
+  const base = Math.round(d.pos);
+  d.nodes.forEach((n, i) => {
+    const m = base + i - 15, a = (m - d.pos) * STEP / R;   // angle on the drum
+    if (m < DMIN || m > DMAX || Math.abs(a) >= Math.PI / 2) { n.style.opacity = 0; return; }
+    const cos = Math.cos(a);
+    n.className = m % 5 === 0 ? 'mj' : '';
+    n.style.opacity = (cos * cos).toFixed(3);
+    n.style.transform = `translateY(${(c + R * Math.sin(a) - 1).toFixed(2)}px) scaleY(${cos.toFixed(3)})`;
+  });
+}
+function detent(){
+  const d = dial, r = clamp(Math.round(d.pos), DMIN, DMAX);
+  if (r === d.last) return;
+  d.last = r; setDur(r);
+  const now = performance.now();
+  if (now - d.lastTick > 26) { d.lastTick = now; buzz(5); tickSound(); }  // throttled so fast spins don't turn into a buzz
+}
+function dialLoop(){
+  const d = dial; if (!d) return;
+  if (!d.dragging) {
+    const out = d.pos < DMIN || d.pos > DMAX;
+    if (Math.abs(d.vel) > .0015 && !out) {               // coasting after a fling
+      d.pos += d.vel * 16; d.vel *= .955;
+    } else {                                              // settle onto the nearest detent (or the target)
+      d.vel = 0;
+      const tgt = d.target != null ? d.target : clamp(Math.round(d.pos), DMIN, DMAX);
+      const diff = tgt - d.pos;
+      d.pos += diff * (d.target != null ? .16 : .25);
+      if (Math.abs(diff) < .003) {
+        d.pos = tgt; d.target = null; detent(); drawDial(); d.raf = 0; save(); return;
+      }
+    }
+  }
+  detent(); drawDial(); d.raf = requestAnimationFrame(dialLoop);
+}
+const kickDial = () => { if (dial && !dial.raf) dial.raf = requestAnimationFrame(dialLoop); };
+function dialTo(v){
+  v = clamp(v, DMIN, DMAX);
+  if (!dial) { setDur(v); save(); return; }
+  ensureAudio(); dial.vel = 0; dial.target = v; kickDial();
+}
+const rubber = raw => raw < DMIN ? DMIN - Math.min(3, (DMIN - raw) * .3) : raw > DMAX ? DMAX + Math.min(3, (raw - DMAX) * .3) : raw;
+let drag = null;
+app.addEventListener('pointerdown', e => {
+  const ruler = e.target.closest('#ruler');
+  if (ruler && dial) {
+    ensureAudio();
+    drag = { kind:'ruler', y0:e.clientY, p0:dial.pos };
+    dial.dragging = true; dial.vel = 0; dial.target = null; dial.samples = [{ t:e.timeStamp, p:dial.pos }];
+    ruler.setPointerCapture(e.pointerId); kickDial(); return;
+  }
+  const knob = e.target.closest('[data-slide]');
+  if (knob) {
+    const track = knob.parentElement, dir = knob.dataset.slide === 'finish' ? -1 : 1;
+    drag = { kind:'slide', knob, dir, x0:e.clientX, max:track.clientWidth - knob.offsetWidth - 14, dx:0 };
+    knob.classList.add('drag'); knob.style.transition = 'none'; knob.setPointerCapture(e.pointerId);
+  }
+});
+app.addEventListener('pointermove', e => {
+  if (!drag) return;
+  if (drag.kind === 'ruler') {
+    dial.pos = rubber(drag.p0 + (drag.y0 - e.clientY) / STEP);
+    dial.samples.push({ t:e.timeStamp, p:dial.pos }); if (dial.samples.length > 6) dial.samples.shift();
+  }
+  else { drag.dx = clamp((e.clientX - drag.x0) * drag.dir, 0, drag.max); drag.knob.style.transform = `translateX(${drag.dx * drag.dir}px)`; const h = drag.knob.parentElement.querySelector('.hint'); if (h) h.style.opacity = (1 - drag.dx / drag.max * 1.4).toFixed(2); }
+});
+const endDrag = () => {
+  if (!drag) return; const d = drag; drag = null;
+  if (d.kind === 'ruler') {
+    const sm = dial.samples, a = sm[0], b = sm[sm.length - 1], dt = b.t - a.t;
+    dial.vel = dt > 0 && performance.now() - b.t < 80 ? clamp((b.p - a.p) / dt, -.3, .3) : 0;
+    dial.dragging = false; kickDial(); return;
+  }
+  d.knob.classList.remove('drag');
+  if (d.dx > d.max * .82) { d.knob.dataset.slide === 'start' ? startRun() : finishRun(); }
+  else { d.knob.style.transition = 'transform .25s cubic-bezier(.2,.8,.2,1)'; d.knob.style.transform = ''; const h = d.knob.parentElement.querySelector('.hint'); if (h) h.style.opacity = ''; }
+};
+app.addEventListener('pointerup', endDrag);
+app.addEventListener('pointercancel', endDrag);
+app.addEventListener('wheel', e => {
+  if (!e.target.closest('#ruler')) return; e.preventDefault();
+  if (!dial) return;
+  const from = dial.target != null ? dial.target : Math.round(dial.pos);
+  dialTo(from + (e.deltaY < 0 ? 1 : -1));
+}, { passive:false });
+
+load();
+if (S.settings.sound === undefined) S.settings.sound = true;
+if (!U.dur) U.dur = S.settings.deflen;
+render();
+})();
+</script>
