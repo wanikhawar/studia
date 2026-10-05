@@ -16,6 +16,10 @@
   <img alt="MIT License" src="https://img.shields.io/badge/license-MIT-e4532a">
 </p>
 
+<p align="center">
+  <a href="https://github.com/wanikhawar/studia/releases/latest"><b>⬇ Download the latest APK</b></a>
+</p>
+
 <table>
   <tr>
     <td align="center"><img src="docs/screenshots/focus.png" width="220" alt="Focus screen with session length, presets and dial" /><br/><sub><b>Focus:</b> pick a length, slide to start</sub></td>
@@ -64,7 +68,17 @@ Studia's look is inspired by the BlockIt app: warm greys, soft rounded tiles, a 
 
 The original clickable design prototype lives in [`mockup/studia.html`](mockup/studia.html).
 
-## Build and run
+## Install
+
+You need a phone running Android 8.0 or newer.
+
+1. On your phone, open the [latest release](https://github.com/wanikhawar/studia/releases/latest) and download the `.apk` file under **Assets**.
+2. Open the downloaded file. If Android asks, allow your browser or file manager to install unknown apps.
+3. Tap **Install**.
+
+To update, install the newer APK the same way. Your data is kept.
+
+## Build from source
 
 You need **Android Studio** (it ships with the JDK and Android SDK) and a phone or emulator running Android 8.0 or newer.
 
@@ -77,7 +91,10 @@ From a terminal:
 ```sh
 ./gradlew :app:installDebug        # build and install on a connected device
 ./gradlew :app:testDebugUnitTest   # run the unit tests
+./gradlew :app:assembleRelease     # build a release APK
 ```
+
+Release builds are signed only if `STUDIA_STORE_FILE`, `STUDIA_STORE_PASSWORD` and `STUDIA_KEY_ALIAS` are set in your `~/.gradle/gradle.properties`. Without them the release APK is unsigned and won't install, so use the debug build instead.
 
 If Gradle complains about your Java version, point `JAVA_HOME` at the JDK bundled with Android Studio (for example `/opt/android-studio/jbr` on Linux).
 
