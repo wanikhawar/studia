@@ -16,9 +16,24 @@ android {
         versionName = "1.0.0"
     }
 
+    // Release signing reads its credentials from ~/.gradle/gradle.properties so they
+    // never enter the repo. Without them, release builds come out unsigned.
+    val storeFilePath = providers.gradleProperty("STUDIA_STORE_FILE").orNull
+    val releaseSigning = storeFilePath?.let {
+        signingConfigs.create("release") {
+            storeFile = file(it)
+            val storePass = providers.gradleProperty("STUDIA_STORE_PASSWORD").get()
+            storePassword = storePass
+            keyAlias = providers.gradleProperty("STUDIA_KEY_ALIAS").get()
+            // PKCS12 keystores (keytool's default) use the store password for the key too.
+            keyPassword = providers.gradleProperty("STUDIA_KEY_PASSWORD").orNull ?: storePass
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = releaseSigning
         }
     }
     compileOptions {
